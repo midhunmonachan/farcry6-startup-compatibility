@@ -1,5 +1,3 @@
-Experimental Far Cry 6 startup launcher. Download the ZIP, extract it, and run FarCry6-Compatibility.exe.
+Download the ZIP, extract it, and run FarCry6-Compatibility.exe. If asked, select your Far Cry 6 folder.
 
-Requires C:\Games\FarCry6 and the documented matching files. Gameplay works on one Core Ultra 9 275HX laptop, Windows build 26300.9711. Other builds, save/load and longer sessions are unverified.
-
-Source and checksums are included. Original game files stay unchanged.
+The original startup repair reached gameplay on one laptop. This release adds portable folder detection, verified with seven automated checks. The portable executable has not had a separate gameplay test. Other game/Windows builds, save/load, and long sessions remain unverified. See the supported setup before use.

@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 internal static class Launcher
 {
-    const string GameDirectory = @"C:\Games\FarCry6\bin";
+    static string GameDirectory;
     static readonly byte[] OriginalLoaderCall = {0xe8,0x65,0x3c,0x10,0};
     static readonly byte[] OriginalInitializer = {0xe9,0x7b,0x9b,0x24,0x1a};
     static readonly Dictionary<string,string> Supported = new Dictionary<string,string> {
@@ -28,12 +28,15 @@ internal static class Launcher
     [STAThread] static int Main()
     {
         try { Console.WriteLine("Started Far Cry 6. Process ID: "+Launch()); return 0; }
+        catch(OperationCanceledException) { return 0; }
         catch(Exception error) { MessageBox.Show(error.Message,"Far Cry 6 compatibility launcher",MessageBoxButtons.OK,MessageBoxIcon.Error); return 1; }
     }
 
     static uint Launch()
     {
         if(IntPtr.Size!=8)throw new InvalidOperationException("Use the 64-bit compatibility launcher.");
+        GameDirectory=GameLocation.Find(AppDomain.CurrentDomain.BaseDirectory,GameLocation.InstalledFolders());
+        if(GameDirectory==null)GameDirectory=GameLocation.Choose();
         string exe=Path.Combine(GameDirectory,"FarCry6.exe");
         foreach(var process in Process.GetProcessesByName("FarCry6")) {
             using(process) {
