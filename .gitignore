@@ -1,0 +1,5 @@
+/build/
+/release/*.zip
+*.pdb
+*.dmp
+*.user
