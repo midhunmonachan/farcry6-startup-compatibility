@@ -5,7 +5,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -15,15 +14,6 @@ internal static class Launcher
     static string GameDirectory;
     static readonly byte[] OriginalLoaderCall = {0xe8,0x65,0x3c,0x10,0};
     static readonly byte[] OriginalInitializer = {0xe9,0x7b,0x9b,0x24,0x1a};
-    static readonly Dictionary<string,string> Supported = new Dictionary<string,string> {
-        {"FarCry6.exe","95C71228D719E8FD68BEE4139B0C5ED253B34B7434698A77AC8E4D2ADAABCCD9"},
-        {"FC_m64d3d12.dll","64A58E8A068ACE1CF10DEC0698C2CEEC0741E3E060F4498CCBCA2AADEAC3B3EF"},
-        {"EMP.dll","D6041735C6769FEC381C85DF1117EF58240AA2DBC4802B99963DDCA739B4203A"},
-        {"upc_r2_loader64.dll","2CE02509BA79EBBAD93D0EBD44B20FB1DC62FCA20E8A43620648FDA8617B29B0"},
-        {"amd_ags_x64.dll","BA6CAFE8F57BD17F63B6B65915C494BB36735EDCDDF8D5FC5E0C6B8B6295F0AC"},
-        {"dbdata.dll","EE8CC455429935C7B8C6BE5947D1B0DE95AA4874E3BB48970CFACC5D5337C30C"},
-        {"uplay_r2.ini","CCAEF16039F133F89021999820FDCE689FBB8CD4E4350B9D332F87AAC18A3A5F"}
-    };
 
     [STAThread] static int Main()
     {
@@ -44,12 +34,7 @@ internal static class Launcher
                 catch(Win32Exception) { }
             }
         }
-        foreach(var item in Supported) {
-            string actual;
-            using(var file=File.OpenRead(Path.Combine(GameDirectory,item.Key)))
-            using(var hash=SHA256.Create())actual=BitConverter.ToString(hash.ComputeHash(file)).Replace("-","");
-            if(actual!=item.Value)throw new InvalidOperationException("This launcher supports the tested game build only. The file "+item.Key+" has changed. Restore the original file before using this launcher.");
-        }
+        GameCompatibility.Verify(GameDirectory);
         var si=new Native.StartupInfo();si.cb=(uint)Marshal.SizeOf(si);var pi=new Native.ProcessInfo();
         IntPtr environment=IntPtr.Zero;bool released=false;
         try {

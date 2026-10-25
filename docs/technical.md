@@ -2,19 +2,23 @@
 
 ## Compatibility and testing
 
-- Tested repair: DODI installation with the seven exact hashes in [supported-files.sha256](../supported-files.sha256). Edited configuration files also fail the hash check.
+- Tested repair: DODI installation with the executable and two patched game-module hashes in [supported-files.sha256](../supported-files.sha256).
 - Laptop: Intel Core Ultra 9 275HX, NVIDIA GeForce RTX 5070 Ti Laptop GPU.
 - Windows registry: 26H2, build 26300.9711. Local ntdll.dll version: `10.0.26100.9549`; SHA-256: `651AC9041AF8E6B5EBD331D53163244C0A27D36D1433F0F15CAC1F28C5F2E82C`.
 - The owner reported actual gameplay on October 23, 2026 with the original fixed-path launcher. Save/load and longer sessions remain unverified.
-- This release adds folder detection and a folder picker while retaining the startup repair code. Seven folder-detection checks pass. The portable executable and folder-picker interaction have not had a separate gameplay/UI test. Other Windows/game builds and CPUs are unverified.
+- The portable launcher adds folder detection and a folder picker while retaining the startup repair code. Version 0.1.1 removes unrelated configuration/dependency hash restrictions. Automated checks cover folder detection and compatibility decisions. The updated portable executable and folder-picker interaction have not had a separate gameplay/UI test. Other Windows/game builds and CPUs are unverified.
 
-The launcher verifies seven game-file hashes and selected Windows/game instruction bytes. It does not verify the full Windows DLL hash or the Windows version. These guards are not proof of compatibility with other Windows builds; those need review before use. Do not remove the guards to force an incompatible setup to run.
+The launcher verifies `FarCry6.exe`, `FC_m64d3d12.dll` and `EMP.dll`, plus the selected Windows/game instruction bytes before patching. These checks protect the executable layout and the modules that the repair changes. It does not verify the full Windows DLL hash or the Windows version. These guards are not proof of compatibility with other Windows builds; those need review before use. Do not remove the guards to force an incompatible setup to run.
+
+The launcher does not read, hash or rewrite `uplay_r2.ini`, graphics preferences or saves. Email, username, profile ID, language, save location, comments, encoding and line endings therefore do not cause a launcher build mismatch. Invalid settings can still prevent the game itself from working; the launcher does not validate them.
+
+`amd_ags_x64.dll`, `upc_r2_loader64.dll` and `dbdata.dll` are not patched by the launcher and are no longer pinned to a particular hash. This removes unrelated rejections; it does not establish that every replacement DLL works. Modifications to the executable or either patched module still fail the build check.
 
 ## Finding the game
 
 The launcher looks beside itself, in a nearby bin folder, then in the DODI uninstall registration. If it cannot locate the game, it opens a folder picker. Select the main Far Cry 6 folder or its bin folder. Cancel exits without launching the game. No fixed drive or folder name is required and no location setting is saved.
 
-Only a folder containing FarCry6.exe is selected. The existing seven-file hash verification runs before creating the game process.
+Only a folder containing FarCry6.exe is selected. The three-file hash verification runs before creating the game process.
 
 ## Startup changes
 
@@ -37,7 +41,9 @@ The original fixed-path executable used for the gameplay test had SHA-256 `67D69
 
 ## Build and test
 
-On Windows, run build.ps1 from the repository root. It uses the Windows .NET Framework 4.x x64 compiler and writes build/FarCry6-Compatibility.exe. Run test.ps1 for the folder-discovery checks. Build outputs are ignored by Git. Compiler versions and PE timestamps can produce different executable hashes.
+On Windows, run build.ps1 from the repository root. It uses the Windows .NET Framework 4.x x64 compiler and writes build/FarCry6-Compatibility.exe. Run test.ps1 for the folder-discovery and compatibility checks. Build outputs are ignored by Git. Compiler versions and PE timestamps can produce different executable hashes.
+
+For optional filesystem integration checks, run `./test.ps1 -GameBin 'C:\Your Library\Far Cry 6\bin'`. This copies the three supported binaries into a temporary test folder, verifies that locked custom settings/dependencies are not accessed, and checks rejection of modified binaries. It does not launch the game or edit the supplied installation, and removes its temporary copies afterward.
 
 ## Undo
 

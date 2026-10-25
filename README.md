@@ -2,11 +2,13 @@
 
 A compatibility launcher for Far Cry 6 installations that close or hang during startup.
 
-1. [Download the ZIP](https://github.com/midhunmonachan/farcry6-startup-compatibility/releases/download/v0.1.0-experimental/fc6-compatibility-v0.1.0-experimental-win-x64.zip).
+1. [Download the ZIP](https://github.com/midhunmonachan/farcry6-startup-compatibility/releases/download/v0.1.1-experimental/fc6-compatibility-v0.1.1-experimental-win-x64.zip).
 2. Extract it.
 3. Run **FarCry6-Compatibility.exe**.
 
 If asked, select your Far Cry 6 folder.
+
+The launcher does not change your settings or saves.
 
 Experimental. Check the [supported setup](docs/technical.md) before use.
 
