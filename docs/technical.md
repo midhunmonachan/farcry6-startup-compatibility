@@ -1,56 +1,53 @@
 # Technical details
 
-## Compatibility and testing
+## Tested setups
 
-- Tested repair: DODI installation with the executable and two patched game-module hashes in [supported-files.sha256](../supported-files.sha256).
-- Laptop: Intel Core Ultra 9 275HX, NVIDIA GeForce RTX 5070 Ti Laptop GPU.
-- Windows registry: 26H2, build 26300.9711. Local ntdll.dll version: `10.0.26100.9549`; SHA-256: `651AC9041AF8E6B5EBD331D53163244C0A27D36D1433F0F15CAC1F28C5F2E82C`.
-- The owner reported actual gameplay on October 23, 2026 with the original fixed-path launcher. Save/load and longer sessions remain unverified.
-- The portable launcher adds folder detection and a folder picker while retaining the startup repair code. Version 0.1.1 removes unrelated configuration/dependency hash restrictions. Automated checks cover folder detection and compatibility decisions. The updated portable executable and folder-picker interaction have not had a separate gameplay/UI test. Other Windows/game builds and CPUs are unverified.
+- DODI repack, Far Cry 6 v1.5.0, Intel Core Ultra 9 275HX, RTX 5070 Ti Laptop GPU, Windows 11 26H2 build 26300.9711: reached gameplay with the original launcher.
+- v0.1.1: launch confirmed on Far Cry 6 v1.5.0, Intel Core Ultra 9 and Windows 11 26H2 build 26300.9711 in [issue #1](https://github.com/midhunmonachan/farcry6-startup-compatibility/issues/1#issuecomment-6399041304). The exact CPU model and GPU were not provided.
 
-The launcher verifies `FarCry6.exe`, `FC_m64d3d12.dll` and `EMP.dll`, plus the selected Windows/game instruction bytes before patching. These checks protect the executable layout and the modules that the repair changes. It does not verify the full Windows DLL hash or the Windows version. These guards are not proof of compatibility with other Windows builds; those need review before use. Do not remove the guards to force an incompatible setup to run.
+Other game and Windows builds, save/load, and long sessions have not been verified. The original test used `ntdll.dll` version `10.0.26100.9549`.
 
-The launcher does not read, hash or rewrite `uplay_r2.ini`, graphics preferences or saves. Email, username, profile ID, language, save location, comments, encoding and line endings therefore do not cause a launcher build mismatch. Invalid settings can still prevent the game itself from working; the launcher does not validate them.
+## Compatibility checks
 
-`amd_ags_x64.dll`, `upc_r2_loader64.dll` and `dbdata.dll` are not patched by the launcher and are no longer pinned to a particular hash. This removes unrelated rejections; it does not establish that every replacement DLL works. Modifications to the executable or either patched module still fail the build check.
+The launcher checks the hashes of `FarCry6.exe`, `FC_m64d3d12.dll` and `EMP.dll` against [supported-files.sha256](../supported-files.sha256). It also checks the Windows and game instructions before changing them. A mismatch stops the repair.
+
+It does not check or edit `uplay_r2.ini`, graphics settings or saves. Custom names, email addresses, languages and save paths can stay as they are. Invalid settings can still prevent the game from working.
+
+It does not patch or require specific hashes for `amd_ags_x64.dll`, `upc_r2_loader64.dll` or `dbdata.dll`. Replacement DLLs still need to work with the game.
 
 ## Finding the game
 
-The launcher looks beside itself, in a nearby bin folder, then in the DODI uninstall registration. If it cannot locate the game, it opens a folder picker. Select the main Far Cry 6 folder or its bin folder. Cancel exits without launching the game. No fixed drive or folder name is required and no location setting is saved.
-
-Only a folder containing FarCry6.exe is selected. The three-file hash verification runs before creating the game process.
+The launcher checks nearby folders and the DODI installation record. If it cannot find the game, select the main game folder or its `bin` folder. No fixed installation path is required.
 
 ## Startup changes
 
-The launcher starts its own game process suspended and changes only that process's memory:
+The launcher starts the game suspended and changes only that process's memory:
 
-1. A temporary loader thunk preserves RBX across a game TLS callback. The original loader call is restored after the startup callback finishes.
-2. An exception-handler edit prevents RBX from being overwritten before it is saved.
-3. Two branch edits avoid an empty CPU-brand block being treated as a match for ordinary zero register values.
-4. A replacement initializer stores CRC32 `0xEC95C51C` for `CNetMsgCharacterStatus_Unicast`, sets the initialization flag and returns its storage address.
+1. Preserves RBX across a TLS callback, then restores the original loader call.
+2. Preserves RBX in an exception handler.
+3. Fixes two CPU-brand comparisons that incorrectly match zero values.
+4. Replaces a stalled initializer for `CNetMsgCharacterStatus_Unicast` with CRC32 `0xEC95C51C`, its initialization flag and storage address.
 
-The final initializer was reconstructed from neighboring getters and startup behavior. Reaching gameplay does not prove complete semantic equivalence or long-term stability. All edits remain specific to the hashes and offsets in the source.
+The initializer was reconstructed from nearby code. Reaching gameplay does not confirm stability in every part of the game. The offsets apply to the supported binaries only.
 
-Original game and Windows files stay unchanged. The launcher reads the game's installation registration; it does not write registry settings, install a driver/service, access the network, upload files or change security settings. Normal game execution can write its settings and saves. A failed repair attempts to terminate only the game process created by this launch.
+Game and Windows files stay unchanged. The launcher installs no driver or service and changes no security settings. The game can still update its own settings and saves. If the repair fails, the launcher attempts to stop the game process it started.
 
-## Verify a download
+## Download checksums
 
-The release ZIP has SHA256SUMS.txt for its contents, plus a separate ZIP checksum asset. Run Get-FileHash on the download to compare it with that checksum. A checksum identifies the published file; it is not a security audit. The executable is unsigned. Do not disable security protections to run it.
-
-The original fixed-path executable used for the gameplay test had SHA-256 `67D69D83566C494538AD9106BAB7D924AFBE0521A2E42D86EF8D90CF09A70390`. The portable release is a different build; use its published checksum.
+The release includes checksums for the ZIP and its contents. Compare a download using `Get-FileHash`. The EXE is unsigned.
 
 ## Build and test
 
-On Windows, run build.ps1 from the repository root. It uses the Windows .NET Framework 4.x x64 compiler and writes build/FarCry6-Compatibility.exe. Run test.ps1 for the folder-discovery and compatibility checks. Build outputs are ignored by Git. Compiler versions and PE timestamps can produce different executable hashes.
+Run `build.ps1` on Windows to compile `build/FarCry6-Compatibility.exe` with the .NET Framework 4.x x64 compiler. Run `test.ps1` for folder detection and compatibility tests.
 
-For optional filesystem integration checks, run `./test.ps1 -GameBin 'C:\Your Library\Far Cry 6\bin'`. This copies the three supported binaries into a temporary test folder, verifies that locked custom settings/dependencies are not accessed, and checks rejection of modified binaries. It does not launch the game or edit the supplied installation, and removes its temporary copies afterward.
+For filesystem tests, run `./test.ps1 -GameBin 'C:\Your Library\Far Cry 6\bin'`. This tests temporary copies of the three supported binaries, then removes them. It does not launch the game or edit the installation.
 
-## Undo
+## Remove the launcher
 
-Use the original bin/FarCry6.exe or restore your old shortcut target, then remove the launcher files. No game-file replacement or system rollback is required for the memory changes.
+Use the original `bin/FarCry6.exe`, restore any shortcuts you changed, and delete the launcher files.
 
-## Reporting results
+## Report a problem
 
-Include Windows build, ntdll.dll version/hash, CPU, game-file hash results, exact launcher error and whether gameplay/save/load/relaunch work. Keep account details, saves, full memory dumps and game/Windows binaries out of reports.
+Include your game version, CPU, GPU, Windows build and the exact error. Include the filename if a compatibility check fails.
 
-The project includes only launcher code and its compiled executable. It is independent of Ubisoft and Microsoft, provided as-is under the MIT license.
+Released under the [MIT license](../LICENSE).
