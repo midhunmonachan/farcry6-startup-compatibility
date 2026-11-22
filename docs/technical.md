@@ -4,6 +4,7 @@
 
 - DODI repack, Far Cry 6 v1.5.0, Intel Core Ultra 9 275HX, RTX 5070 Ti Laptop GPU, Windows 11 26H2 build 26300.9711: reached gameplay with the original launcher.
 - v0.1.1: launch confirmed on Far Cry 6 v1.5.0, Intel Core Ultra 9 and Windows 11 26H2 build 26300.9711 in [issue #1](https://github.com/midhunmonachan/farcry6-startup-compatibility/issues/1#issuecomment-6399041304). The exact CPU model and GPU were not provided.
+- v0.1.2: launch and opening video confirmed on Windows build 26300 with `ntdll.dll` 10.0.26100.9974. Full gameplay was not tested on this build.
 
 Other game and Windows builds, save/load, and long sessions have not been verified. The original test used `ntdll.dll` version `10.0.26100.9549`.
 

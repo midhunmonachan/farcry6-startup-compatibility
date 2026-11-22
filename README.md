@@ -2,7 +2,7 @@
 
 A compatibility launcher for the DODI repack of Far Cry 6 v1.5.0 when it closes or hangs at startup.
 
-1. [Download the ZIP](https://github.com/midhunmonachan/farcry6-startup-compatibility/releases/download/v0.1.1-experimental/fc6-compatibility-v0.1.1-experimental-win-x64.zip).
+1. [Download the ZIP](https://github.com/midhunmonachan/farcry6-startup-compatibility/releases/download/v0.1.2-experimental/fc6-compatibility-v0.1.2-experimental-win-x64.zip).
 2. Extract it.
 3. Run `FarCry6-Compatibility.exe`.
 
