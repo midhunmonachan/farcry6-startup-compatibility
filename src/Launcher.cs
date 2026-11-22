@@ -12,7 +12,6 @@ using System.Windows.Forms;
 internal static class Launcher
 {
     static string GameDirectory;
-    static readonly byte[] OriginalLoaderCall = {0xe8,0x65,0x3c,0x10,0};
     static readonly byte[] OriginalInitializer = {0xe9,0x7b,0x9b,0x24,0x1a};
 
     [STAThread] static int Main()
@@ -30,7 +29,7 @@ internal static class Launcher
         string exe=Path.Combine(GameDirectory,"FarCry6.exe");
         foreach(var process in Process.GetProcessesByName("FarCry6")) {
             using(process) {
-                try { if(string.Equals(process.MainModule.FileName,exe,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Far Cry 6 is already running. Close it before launching it again."); }
+                try { if(process.HasExited)continue; if(string.Equals(process.MainModule.FileName,exe,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Far Cry 6 is already running. Close it before launching it again."); }
                 catch(Win32Exception) { }
             }
         }
@@ -44,10 +43,11 @@ internal static class Launcher
             environment=Marshal.StringToHGlobalUni(env.ToString());
             Check(Native.CreateProcessW(exe,new StringBuilder("\""+exe+"\""),IntPtr.Zero,IntPtr.Zero,false,0x404,environment,GameDirectory,ref si,out pi),"Start Far Cry 6");
             IntPtr process=pi.process;
-            long ntdll=Native.GetModuleHandleW("ntdll.dll").ToInt64();long call=ntdll+0x1b2de;
-            if(!Equal(Read(process,call,5),OriginalLoaderCall))throw new InvalidOperationException("This Windows loader differs from the tested version. The compatibility launcher cannot safely apply this repair.");
-            long thunk=AllocateNear(process,ntdll);Write(process,thunk,RepairCode.LoaderThunk(ntdll+0x11ef48));MakeExecutable(process,thunk);
-            byte[] privateCall=RepairCode.Branch(0xe8,call,thunk);Patch(process,call,OriginalLoaderCall,privateCall);
+            long ntdll=Native.GetModuleHandleW("ntdll.dll").ToInt64();
+            var loader=WindowsLoader.Locate(ntdll,(address,length)=>Read(process,address,length));
+            long call=loader.Call;
+            long thunk=AllocateNear(process,ntdll);Write(process,thunk,RepairCode.LoaderThunk(loader.Target));MakeExecutable(process,thunk);
+            byte[] privateCall=RepairCode.Branch(0xe8,call,thunk);Patch(process,call,loader.OriginalCall,privateCall);
             Check(Native.ResumeThread(pi.thread)!=0xffffffff,"Resume Far Cry 6");
             bool handlerFixed=false,initializerFixed=false,loaderRestored=false;long engine=0;
             var timer=Stopwatch.StartNew();
@@ -73,7 +73,7 @@ internal static class Launcher
                     initializerFixed=true;
                 }
                 if(engine!=0 && !loaderRestored && Equal(Read(process,engine+0x1ea42010,1),new byte[]{0xc3})) {
-                    Freeze(process,delegate {Patch(process,call,privateCall,OriginalLoaderCall);});loaderRestored=true;
+                    Freeze(process,delegate {Patch(process,call,privateCall,loader.OriginalCall);});loaderRestored=true;
                 }
                 if(handlerFixed && initializerFixed && loaderRestored) {released=true;return pi.pid;}
                 Thread.Sleep(10);

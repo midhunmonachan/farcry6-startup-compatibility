@@ -14,4 +14,9 @@ $compatibilityExe = Join-Path $outputDirectory 'CompatibilityTests.exe'
 if ($LASTEXITCODE -ne 0) { throw 'Compatibility test compilation failed.' }
 & $compatibilityExe
 if ($LASTEXITCODE -ne 0) { throw 'Compatibility tests failed.' }
+$loaderExe = Join-Path $outputDirectory 'WindowsLoaderTests.exe'
+& $compiler /nologo /target:exe /platform:x64 /main:WindowsLoaderTests /reference:System.Windows.Forms.dll "/out:$loaderExe" @sources (Join-Path $PSScriptRoot 'tests\WindowsLoaderTests.cs')
+if ($LASTEXITCODE -ne 0) { throw 'Windows loader test compilation failed.' }
+& $loaderExe
+if ($LASTEXITCODE -ne 0) { throw 'Windows loader tests failed.' }
 if ($GameBin) { & (Join-Path $PSScriptRoot 'tests\VerifyInstalledBuild.ps1') -GameBin $GameBin }

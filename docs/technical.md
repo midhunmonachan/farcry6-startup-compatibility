@@ -9,7 +9,7 @@ Other game and Windows builds, save/load, and long sessions have not been verifi
 
 ## Compatibility checks
 
-The launcher checks the hashes of `FarCry6.exe`, `FC_m64d3d12.dll` and `EMP.dll` against [supported-files.sha256](../supported-files.sha256). It also checks the Windows and game instructions before changing them. A mismatch stops the repair.
+The launcher checks the hashes of `FarCry6.exe`, `FC_m64d3d12.dll` and `EMP.dll` against [supported-files.sha256](../supported-files.sha256). It finds the Windows loader call by its surrounding instructions, then checks that there is exactly one match and that its target is inside the loader's code. A mismatch stops the repair. This handles changed call addresses, but a future Windows build can still change the surrounding instructions and require a launcher update.
 
 It does not check or edit `uplay_r2.ini`, graphics settings or saves. Custom names, email addresses, languages and save paths can stay as they are. Invalid settings can still prevent the game from working.
 
@@ -28,7 +28,7 @@ The launcher starts the game suspended and changes only that process's memory:
 3. Fixes two CPU-brand comparisons that incorrectly match zero values.
 4. Replaces a stalled initializer for `CNetMsgCharacterStatus_Unicast` with CRC32 `0xEC95C51C`, its initialization flag and storage address.
 
-The initializer was reconstructed from nearby code. Reaching gameplay does not confirm stability in every part of the game. The offsets apply to the supported binaries only.
+The initializer was reconstructed from nearby code. Reaching gameplay does not confirm stability in every part of the game. The game offsets apply to the supported binaries only. The Windows loader call and target are found at launch rather than pinned to one Windows build.
 
 Game and Windows files stay unchanged. The launcher installs no driver or service and changes no security settings. The game can still update its own settings and saves. If the repair fails, the launcher attempts to stop the game process it started.
 
